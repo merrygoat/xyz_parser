@@ -1,3 +1,6 @@
+from os.path import getsize
+
+
 class XYZParser:
     """Parses XYZ files to make sure they are valid and determines the number of particles and frame offsets"""
     frame_offsets = []
@@ -8,15 +11,14 @@ class XYZParser:
 
     def __init__(self, filename):
         self.filename = filename
-        self.check_file()
+        self.parse_file()
 
-    def check_file(self):
-        """Checks if file is a valid XYZ file, exits if not."""
+    def parse_file(self):
+        """Parses an XYZ file, determining the number of frames and number of particles in each frame."""
         with open(self.filename, 'r') as xyz_file:
             line = "Temp"
             while line != "":
-                line = xyz_file.readline()
-                self.check_particle_number(line)
+                self.frame_particles.append(self.check_particle_number(xyz_file.readline()))
                 self.line_number += 1
                 # Skip the comment line
                 xyz_file.readline()
@@ -24,7 +26,6 @@ class XYZParser:
                 # Store the file location of the start of the frame
                 self.frame_offsets.append(xyz_file.tell())
                 self.get_coordinates(xyz_file)
-                ValueTests.check_coordinate_frame(self.frame_buffer)
                 self.num_frames += 1
 
     def check_particle_number(self, line):
@@ -33,14 +34,14 @@ class XYZParser:
 
     def get_coordinates(self, xyz_file):
         """Returns True if num_particles lines can be read from the file."""
-        self.frame_buffer = []
-        for i in range(self.frame_particles[-1]):
+        for line_number in range(self.frame_particles[-1]):
             line = xyz_file.readline()
             if line == "":
                 print("Unexpected file end. Expected particle coordinates.")
                 raise EOFError
             else:
-                self.frame_buffer.append(line)
+                new_frame = ValueTests.check_coordinate_frame(self.frame_buffer)
+        return new_frame
 
 
 class ValueTests:
@@ -74,7 +75,7 @@ class ValueTests:
 
     @staticmethod
     def check_coordinate_frame(frame_buffer):
-        """Passes lines of coordinates to the check_coordinate_line method"""
+        """Adds an XYZ frame to an XYZFrame object line by line"""
         new_frame = XYZFrame
         for line in frame_buffer:
             new_frame.data.append(ValueTests.check_coordinate_line(line))
