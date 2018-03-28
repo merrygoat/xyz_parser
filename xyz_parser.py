@@ -13,9 +13,8 @@ class XYZParser:
     def check_file(self):
         """Checks if file is a valid XYZ file, exits if not."""
         with open(self.filename, 'r') as xyz_file:
-            line = "Temp"
+            line = xyz_file.readline()
             while line != "":
-                line = xyz_file.readline()
                 self.check_particle_number(line)
                 self.line_number += 1
                 # Skip the comment line
@@ -26,6 +25,7 @@ class XYZParser:
                 self.get_coordinates(xyz_file)
                 ValueTests.check_coordinate_frame(self.frame_buffer)
                 self.num_frames += 1
+                line = xyz_file.readline()
 
     def check_particle_number(self, line):
         """Raises exception if particle number is wrong format"""
@@ -89,3 +89,27 @@ class XYZFrame:
 
     def __init__(self):
         pass
+
+
+class XYZReader:
+    """Methods for reading data from files."""
+
+    def __init__(self, input_xyz_file):
+        self.xyz_file = input_xyz_file
+        self.xyz_info = XYZParser(input_xyz_file)
+
+    def get_num_frames(self):
+        return self.xyz_info.num_frames
+
+    def get_frame(self, frame_number):
+        if frame_number > self.xyz_info.num_frames:
+            print("Unable to get frame. Requested frame > total frames")
+            return 1
+        else:
+            frame_data = XYZFrame()
+            with open(self.xyz_file) as input_file:
+                input_file.seek(self.xyz_info.frame_offsets[frame_number])
+                frame_data.num_particles = self.xyz_info.frame_particles[frame_number]
+                for particle in range(frame_data.num_particles):
+                    frame_data.data.append(input_file.readline().split())
+            return frame_data
